@@ -1,0 +1,83 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — Virtual host
+# Target: Nginx on Ubuntu Server 24.04 LTS
+# Install:
+#   sudo ln -sf /etc/nginx/sites-available/researchportal \
+#               /etc/nginx/sites-enabled/researchportal
+#   sudo rm -f /etc/nginx/sites-enabled/default
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# Self-signed certificate generation:
+#   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#     -keyout /etc/ssl/private/researchportal.key \
+#     -out   /etc/ssl/certs/researchportal.crt \
+#     -subj  "/CN=researchportal.local"
+#   sudo chmod 600 /etc/ssl/private/researchportal.key
+# ═══════════════════════════════════════════════════════════
+
+# --- HTTP → HTTPS redirect ---
+server {
+    listen 80;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
+
+# --- HTTPS virtual host ---
+server {
+    listen 443 ssl;
+    server_name _;
+    root /var/www/researchportal/public;
+    index index.php index.html;
+
+    # TLS 1.3 only — certificate paths from the generation step above
+    ssl_certificate     /etc/ssl/certs/researchportal.crt;
+    ssl_certificate_key /etc/ssl/private/researchportal.key;
+    ssl_protocols       TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # --- Block direct access to sensitive directories ---
+    location /uploads/ {
+        deny all;
+        return 403;
+    }
+    location /includes/ {
+        deny all;
+        return 403;
+    }
+
+    # --- Block direct access to sensitive file extensions ---
+    location ~* \.(env|sql|bak|log|sh|key)$ {
+        deny all;
+        return 403;
+    }
+
+    # --- Application routing ---
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # --- PHP-FPM via Unix socket ---
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # --- Suppress Apache .htaccess exposure ---
+    location ~ /\.ht {
+        deny all;
+    }
+
+    # --- Triaging false-positive scanner hits ---
+    # nikto flags /#wp-config.php# — but '#' is a URL fragment processed
+    # client-side only; the real HTTP request is GET /. This is a custom
+    # PHP app — no WordPress files exist. These rules return 404 to keep
+    # the scanner quiet and document the deliberate decision.
+    location = /#wp-config.php#            { return 404; }
+    location = /wordpress/#wp-config.php#  { return 404; }
+    location ~* /%23wp-config%             { return 404; }
+    location ~* /wordpress/%23wp-config%   { return 404; }
+    location ~* wp-config                  { return 404; }
+    location ~* /wordpress                 { return 404; }
+}

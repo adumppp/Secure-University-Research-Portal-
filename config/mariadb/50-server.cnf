@@ -1,0 +1,22 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — MariaDB server hardening
+# Target: MariaDB 10.11 on Ubuntu Server 24.04 LTS
+# Install: /etc/mysql/mariadb.conf.d/50-server.cnf
+# Apply:   sudo systemctl restart mariadb
+#
+# Also run once after installation:
+#   sudo mysql_secure_installation
+#     → remove anonymous users
+#     → drop test database
+#     → disable remote root login
+#     → reload privilege tables
+# ═══════════════════════════════════════════════════════════
+
+[mysqld]
+# --- Network isolation: accept connections from localhost only ---
+# The database is never reachable from the network. The PHP application
+# connects via 127.0.0.1; external hosts get connection-refused.
+bind-address = 127.0.0.1
+
+# --- Disable LOAD DATA LOCAL INFILE (prevents arbitrary file reads) ---
+local-infile = 0

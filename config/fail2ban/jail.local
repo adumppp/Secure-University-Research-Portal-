@@ -1,0 +1,49 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — Fail2ban intrusion prevention
+# Target: Fail2ban on Ubuntu Server 24.04 LTS
+# Install: /etc/fail2ban/jail.local
+# Apply:   sudo systemctl restart fail2ban
+# Verify:  sudo fail2ban-client status
+#          sudo fail2ban-client status sshd
+# ═══════════════════════════════════════════════════════════
+
+# --- Global defaults ---
+[DEFAULT]
+bantime  = 3600     # 1 hour
+findtime = 600      # window for retry counting
+maxretry = 5        # default threshold (overridden per-jail below)
+
+# --- SSH ---
+# Note: ban action on this host is nftables[type=allports] (set in
+# /etc/fail2ban/jail.d/defaults-debian.conf), so a ban blocks the IP
+# across ALL ports — the `port` setting below is informational.
+# If you move to iptables-multiport, set port = 2222 to match the
+# hardened SSH listener.
+[sshd]
+enabled = true
+port    = 2222
+logpath = /var/log/auth.log
+maxretry = 3
+
+# --- Nginx HTTP basic auth failures ---
+[nginx-http-auth]
+enabled = true
+filter  = nginx-http-auth
+port    = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 5
+
+# --- Nginx bot/search probes ---
+[nginx-botsearch]
+enabled = true
+filter  = nginx-botsearch
+port    = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 5
+
+# --- Nginx rate-limit violations ---
+[nginx-limit-req]
+enabled = true
+port    = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 10

@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — Sudo command whitelist
+# Target: Ubuntu Server 24.04 LTS (sudo)
+# Install: /etc/sudoers.d/researchportal   (NEVER edit /etc/sudoers
+# directly — use visudo: sudo visudo -f /etc/sudoers.d/researchportal)
+# Apply:   chmod 0440 /etc/sudoers.d/researchportal
+#
+# Design: the admin user gets a COMMAND WHITELIST, not blanket root.
+# The default %sudo ALL=(ALL:ALL) ALL group rule is superseded by
+# removing the admin user from the sudo group and granting only the
+# commands operations actually needs.
+#
+# Also add to /etc/sudoers (via visudo):
+#   Defaults timestamp_timeout=5     # sudo cache expires after 5 min
+#   Defaults passwd_tries=3           # max 3 password attempts
+# ═══════════════════════════════════════════════════════════
+
+# Admin user — whitelist only. Extend deliberately, never loosely.
+portaladmin ALL=(root) NOPASSWD: \
+    /usr/bin/systemctl restart nginx, \
+    /usr/bin/systemctl restart mariadb, \
+    /usr/bin/systemctl restart php8.3-fpm, \
+    /usr/bin/systemctl status nginx, \
+    /usr/bin/systemctl status mariadb, \
+    /usr/bin/systemctl status php8.3-fpm, \
+    /usr/bin/systemctl status fail2ban, \
+    /usr/bin/systemctl status wazuh-agent, \
+    /usr/bin/journalctl, \
+    /usr/bin/tail, \
+    /usr/bin/cat, \
+    /usr/bin/grep, \
+    /usr/bin/ufw status, \
+    /usr/bin/ufw status verbose, \
+    /usr/bin/fail2ban-client status, \
+    /usr/bin/fail2ban-client status sshd, \
+    /usr/local/bin/backup.sh, \
+    /usr/local/bin/restore.sh
+
+# NOTE: deliberately NOT whitelisted (each denied on purpose):
+#   apt / apt-get      — package changes require console/root access
+#   visudo / vi        — privilege policy changes go through change control
+#   whoami / arbitrary commands — proves the whitelist is real in demos:
+#
+# $ sudo whoami
+# Sorry, user portaladmin is not allowed to execute '/usr/bin/whoami' as root.

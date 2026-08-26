@@ -1,0 +1,61 @@
+# --- Secrets / credentials ---
+.env
+.env.*
+*.pem
+*.key
+*id_ed25519*
+*id_rsa*
+*_key*
+secrets/
+credentials/
+
+# --- Private keys / SSH material ---
+# Never commit any SSH private key. Public keys (.pub) may be committed.
+!*.pub
+
+# --- Database dumps (exclude raw dumps, but keep schema.sql) ---
+*.sql
+*.sql.gz
+!schema.sql
+backups/
+received-backups/
+
+# --- PCAP / network captures ---
+*.pcap
+*.pcapng
+*.cap
+
+# --- Logs ---
+*.log
+logs/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.bak
+*.old
+*.orig
+
+# --- PHP / web ---
+composer.phar
+vendor/
+node_modules/
+
+# --- Original (pre-hardening) source files ---
+*.original
+
+# --- Staging screenshots — not yet reviewed/sanitized ---
+# Keep the working set out of version control until each image passes
+# the visual review checklist (docs/screenshots/staging/MAPPING.md).
+# Move reviewed files to docs/screenshots/ to include them.
+docs/screenshots/staging/
+
+# --- Lab-only artifacts that must never be published ---
+# Any file containing real IP mappings outside the lab range,
+# any user personally-identifiable data, or any production credentials.
+private/

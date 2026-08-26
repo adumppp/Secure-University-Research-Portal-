@@ -1,0 +1,32 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — Log rotation
+# Target: logrotate on Ubuntu Server 24.04 LTS
+# Install: /etc/logrotate.d/researchportal
+# Apply:   automatic (logrotate reads /etc/logrotate.d/ daily)
+# Verify:  sudo logrotate -d /etc/logrotate.d/researchportal
+# ═══════════════════════════════════════════════════════════
+
+# --- Nginx logs: daily, 14-day retention ---
+# Protects monitoring availability — an attacker can't fill the disk
+# with access-log noise during a brute-force run.
+/var/log/nginx/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    sharedscripts
+    postrotate
+        nginx -s reopen
+    endscript
+}
+
+# --- Auth log: weekly, 4-week retention ---
+/var/log/auth.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+}

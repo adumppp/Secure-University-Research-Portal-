@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════════════════
+# Secure Research Portal — Hardened SSH daemon configuration
+# Target: Ubuntu Server 24.04 LTS (OpenSSH)
+# Install: /etc/ssh/sshd_config  →  systemctl restart sshd
+# ═══════════════════════════════════════════════════════════
+
+# --- Listener ---
+# Non-default port: defeats the majority of automated scanners
+# and mass brute-force tooling that only targets port 22.
+Port 2222
+
+# --- Authentication ---
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+KbdInteractiveAuthentication no
+MaxAuthTries 3
+LoginGraceTime 30
+
+# --- Access control ---
+# Only the dedicated admin account may connect (ED25519 keys only).
+AllowUsers portaladmin
+
+# --- Session hygiene ---
+ClientAliveInterval 300
+ClientAliveCountMax 2
+X11Forwarding no
+UsePAM yes
+PrintMotd no
+AcceptEnv LANG LC_*
+
+# --- SFTP (retained for secure file transfer) ---
+Subsystem sftp /usr/lib/openssh/sftp-server
